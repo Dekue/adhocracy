@@ -1,5 +1,6 @@
 from pylons import tmpl_context as c
 from adhocracy.lib.auth.authorization import has
+from adhocracy.lib.auth.authorization import NOT_LOGGED_IN
 
 
 def index(check):
@@ -23,6 +24,7 @@ def edit(check, u):
         return
     show(check, u)
     check.other('user_not_self', u != c.user)
+    check.other(NOT_LOGGED_IN, not c.user)
 
 
 def manage(check, u):
@@ -42,11 +44,19 @@ def supervise(check, u):
                 not (has('user.manage') or has('instance.admin')))
 
 
+def show_dashboard(check, u):
+    show(check, u)
+    check.other('user_not_self', u != c.user)
+
+
+show_watchlist = show_dashboard
+
+
 delete = edit
 
 
 def vote(check):
     check.other('vote_prohibited', has('vote.prohibit'))
     check.other('not_in_instance', not c.instance)
-    check.other('not_logged_in', not c.user)
+    check.other(NOT_LOGGED_IN, not c.user)
     check.perm('vote.cast')

@@ -1,25 +1,27 @@
 import logging
+import urllib
 
 import formencode
 from formencode import htmlfill, Invalid, validators
 
-from pylons import request, tmpl_context as c
+from paste.deploy.converters import asbool
+
+from pylons import config, request, tmpl_context as c
 from pylons.controllers.util import redirect
 from pylons.decorators import validate
 from pylons.i18n import _
 
-from repoze.what.plugins.pylonshq import ActionProtector
-
 from adhocracy import forms, model
 from adhocracy.lib import democracy, event, helpers as h, pager
 from adhocracy.lib import sorting, tiles, watchlist
-from adhocracy.lib.auth import authorization, can, csrf, require
+from adhocracy.lib.auth import authorization, can, csrf, require, guard
 from adhocracy.lib.auth.csrf import RequireInternalRequest
 from adhocracy.lib.base import BaseController
 from adhocracy.lib.instance import RequireInstance
 from adhocracy.lib.templating import render, render_def, render_json
-from adhocracy.lib.queue import post_update
+from adhocracy.lib.queue import update_entity
 from adhocracy.lib.util import get_entity_or_abort
+from adhocracy.lib.util import split_filter
 
 import adhocracy.lib.text as text
 
@@ -103,15 +105,41 @@ class ProposalController(BaseController):
         c.tutorial = 'proposal_index'
         return render("/proposal/index.html")
 
+    def _set_categories(self):
+        categories = model.CategoryBadge.all(
+            c.instance, include_global=not c.instance.hide_global_categories)
+
+        toplevel, lowerlevel = split_filter(lambda c: c.parent is None,
+                                            categories)
+
+        # If there is exactly one top level category and there are lower
+        # level categories, only these are shown in the category chooser,
+        # and the (single) toplevel select description is used as the toplevel
+        # select prompt.
+
+        if len(toplevel) == 1 and len(lowerlevel) > 0:
+            categories = lowerlevel
+            c.toplevel_question = toplevel[0].select_child_description
+            root = toplevel[0]
+        else:
+            c.toplevel_question = None
+            root = None
+
+        c.categories = sorted(
+            [(cat.id, cat.get_key(root), cat.select_child_description)
+             for cat in categories],
+            key=lambda x: x[1])
+
     @RequireInstance
+    @guard.proposal.create()
     @validate(schema=ProposalNewForm(), form='bad_request',
               post_only=False, on_get=True)
     def new(self, errors=None):
-        require.proposal.create()
         c.pages = []
         c.exclude_pages = []
-        c.categories = model.CategoryBadge.all(
-            c.instance, include_global=not c.instance.hide_global_categories)
+
+        self._set_categories()
+
         if 'page' in request.params:
             page = model.Page.find(request.params.get('page'))
             if page and page.function == model.Page.NORM:
@@ -160,7 +188,8 @@ class ProposalController(BaseController):
                                         self.form_result.get('text'),
                                         c.user,
                                         function=model.Page.DESCRIPTION,
-                                        wiki=self.form_result.get('wiki'))
+                                        wiki=self.form_result.get('wiki'),
+                                        formatting=True)
         description.parents = [proposal]
         model.meta.Session.flush()
         proposal.description = description
@@ -201,13 +230,12 @@ class ProposalController(BaseController):
               post_only=False, on_get=True)
     def edit(self, id, errors={}):
         c.proposal = get_entity_or_abort(model.Proposal, id)
-        c.can_edit_wiki = self._can_edit_wiki(c.proposal, c.user)
         require.proposal.edit(c.proposal)
+        c.can_edit_wiki = self._can_edit_wiki(c.proposal, c.user)
 
         c.text_rows = text.text_rows(c.proposal.description.head)
 
-        # all available categories
-        c.categories = model.CategoryBadge.all(c.instance, include_global=True)
+        self._set_categories()
 
         # categories for this proposal
         # (single category not assured in db model)
@@ -216,8 +244,10 @@ class ProposalController(BaseController):
         force_defaults = False
         if errors:
             force_defaults = True
+        defaults = dict(request.params)
+        defaults.update({"category": c.category.id if c.category else None})
         return htmlfill.render(render("/proposal/edit.html"),
-                               defaults=dict(request.params),
+                               defaults=defaults,
                                errors=errors, force_defaults=force_defaults)
 
     @RequireInstance
@@ -273,6 +303,10 @@ class ProposalController(BaseController):
                 c.proposal.selections,
                 key=lambda s: s.page.title)
 
+        if model.votedetail.is_enabled():
+            c.votedetail = model.votedetail.calc_votedetail(
+                c.instance, c.proposal.rate_poll)
+
         if format == 'rss':
             return self.activity(id, format)
 
@@ -292,6 +326,13 @@ class ProposalController(BaseController):
         self._common_metadata(c.proposal)
         c.tutorial_intro = _('tutorial_proposal_show_tab')
         c.tutorial = 'proposal_show'
+        monitor_comment_behavior = asbool(
+            config.get('adhocracy.monitor_comment_behavior', 'False'))
+        if monitor_comment_behavior:
+            c.monitor_comment_url = '%s?%s' % (
+                h.base_url('/stats/read_comments'),
+                urllib.urlencode({'path':
+                    h.entity_url(c.proposal).encode('utf-8')}))
         return render("/proposal/show.html")
 
     @RequireInstance
@@ -430,11 +471,14 @@ class ProposalController(BaseController):
         badges = sorted(badges, key=lambda badge: badge.title)
         return badges
 
-    @ActionProtector(authorization.has_permission("instance.admin"))
+    @guard.perm("instance.admin")
     def badges(self, id, errors=None, format='html'):
         c.proposal = get_entity_or_abort(model.Proposal, id)
         c.badges = self._editable_badges(c.proposal)
-        defaults = {'badge': [str(badge.id) for badge in c.proposal.badges]}
+        defaults = {
+            'badge': [str(badge.id) for badge in c.proposal.badges],
+            '_tok': csrf.token_id()
+        }
         if format == 'ajax':
             checked = [badge.id for badge in c.proposal.badges]
             json = {'title': c.proposal.title,
@@ -451,7 +495,7 @@ class ProposalController(BaseController):
 
     @RequireInternalRequest()
     @validate(schema=DelegateableBadgesForm(), form='badges')
-    @ActionProtector(authorization.has_permission("instance.admin"))
+    @guard.perm("instance.admin")
     @csrf.RequireInternalRequest(methods=['POST'])
     def update_badges(self, id, format='html'):
         proposal = get_entity_or_abort(model.Proposal, id)
@@ -478,7 +522,7 @@ class ProposalController(BaseController):
         # FIXME: needs commit() cause we do an redirect() which raises
         # an Exception.
         model.meta.Session.commit()
-        post_update(proposal, model.update.UPDATE)
+        update_entity(proposal, model.UPDATE)
         if format == 'ajax':
             obj = {'html': render_def('/badge/tiles.html', 'badges',
                                       badges=proposal.badges)}

@@ -364,6 +364,13 @@ var adhocracy = adhocracy || {};
         update();
     };
 
+    adhocracy.helpers.flash = function(category, message) {
+        var container = $('#welcome_message').find('.page_wrapper');
+        var el = $('<div>');
+        el.attr('class', 'alert alert-' + category);
+        el.text(message);
+        container.append(el);
+    }; 
 }());
 
 $(document).ready(function () {
@@ -403,10 +410,9 @@ $(document).ready(function () {
         event.preventDefault();
         var c_id = $(this).closest('.comment').attr('id');
         var comment_form_id = 'comment_form_' + c_id;
-        var reply_id = $(this).data('reply');
         var comment_form = $('#' + comment_form_id).attr('comment_id');
         if (!comment_form) {
-            var form_url = '/comment/form/reply/' + reply_id;
+            var form_url = $(this).data('reply-url');
             var comment_div = $('#' + c_id);
             // create a container and load the form into it.
             var form_div = comment_div.add('<div></div>').not(comment_div);
@@ -473,6 +479,49 @@ $(document).ready(function () {
         second_level_comments.hide();
         second_level_comments.toggleClass('open');
     }());
+
+    var stats_baseurl = $('#main_comments').data('stats-baseurl');
+    if (stats_baseurl) {
+        $('.comment a.show_comments').one('click', function () {
+            var c_id = $(this).closest('.comment').attr('id');
+            $.get(stats_baseurl + '&cause=showSubcomments&comment_id=' + c_id);
+        });
+        $(document).one('scroll', function() {
+            var c_ids = $('.comment').filter('[id]').map(function() {
+                return this.id;
+            }).get().sort().join(',');
+            $.get(stats_baseurl + '&cause=scroll&comment_id=' + c_ids);
+        });
+    }
+
+    var page_stats_baseurl = $('body').data('stats-baseurl');
+    if (page_stats_baseurl) {
+        var window_is_active = true;
+        $(window).focus(function() { window_is_active = true });
+        $(window).blur( function() { window_is_active = false });
+        var stats_interval = $('body').data('stats-interval');
+        var sendOnPagePing = function() {
+            $.get(page_stats_baseurl + '?page=' + encodeURIComponent(location.href) + '&window_is_active=' + window_is_active,
+                    null, setOnPageTimeout);
+        };
+        var setOnPageTimeout = function() {
+            window.setTimeout(sendOnPagePing, stats_interval);
+        };
+        setOnPageTimeout();
+    }
+
+    var external_baseurl = $('body').data('stats-monitor_external_links_url');
+    if (external_baseurl) {
+        $('a[rel="external"]').bind('click', function(e) {
+            var href = $(this).attr('href');
+            var url = external_baseurl;
+            url += '?from=' + encodeURIComponent(window.location.href);
+            url += '&href=' + encodeURIComponent(href);
+            $.ajax(url, {
+                'type': 'POST',
+            });
+        });
+    }
 
     $('.paper a.show_comments').click(function () {
         var p_id = $(this).closest('.paper').attr('id');
@@ -604,7 +653,7 @@ $(document).ready(function () {
         $.ajax({
             url: widget_url,
             success: function (data) {
-                target.html(data);
+                target.replaceWith(data);
                 adhocracy.overlay.bindOverlays(target);
             }
         });
@@ -634,4 +683,36 @@ $(document).ready(function () {
                 return false;
             });
     });
+
+    $('a.expand_arrow').click(function () {
+        $(this).parent().toggleClass('expanded');
+    });
+
+    $('.facet_check').click(function() {
+        $(this).parent().children('a')[0].click();
+    });
+
+    var welcome_form = $('form#user_welcome');
+    welcome_form.submit(function(e) {
+        if (welcome_form.data('submitted')) {
+            return;
+        }
+        var data = welcome_form.serialize();
+        welcome_form.find('input').attr('disabled', 'disabled');
+        $.ajax(welcome_form.attr('action'), {
+            type: 'post',
+            data: data,
+            success: function() {
+                welcome_form.remove();
+                adhocracy.helpers.flash('success', welcome_form.attr('data-success-message'));
+            },
+            error: function() {
+                // Fall back to plain submission
+                welcome_form.data({submitted: true});
+                welcome_form.submit();
+            }
+        });
+        e.preventDefault();
+    });
+
 });

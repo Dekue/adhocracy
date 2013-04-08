@@ -1,9 +1,9 @@
 """The application's model objects"""
 from sqlalchemy import orm, and_
+from sqlalchemy import event as sa_event
 from sqlalchemy.orm import mapper, relation, backref, synonym
 
 import meta
-from adhocracy.model.update import SessionModificationExtension
 
 from adhocracy.model.user import User, user_table
 from adhocracy.model.openid import OpenID, openid_table
@@ -44,7 +44,12 @@ from adhocracy.model.page import Page, page_table
 from adhocracy.model.text import Text, text_table
 from adhocracy.model.milestone import Milestone, milestone_table
 from adhocracy.model.selection import Selection, selection_table
+from adhocracy.model.staticpage import StaticPage, staticpage_table
 from adhocracy.model.requestlog import RequestLog, requestlog_table
+from adhocracy.model.message import Message, message_table
+from adhocracy.model.message import MessageRecipient, message_recipient_table
+from adhocracy.model.votedetail import votedetail_table
+
 
 mapper(User, user_table, properties={
     'email': synonym('_email', map_column=True),
@@ -128,7 +133,13 @@ mapper(CategoryBadge, inherits=badge_mapper,
                secondaryjoin=(delegateable_badges_table.c.delegateable_id ==
                               delegateable_table.c.id),
                backref=backref('categories', lazy='joined'),
-               lazy=False)})
+               lazy=False),
+           'children': relation(
+               CategoryBadge,
+               #remote_side=badge_table.c.id,
+               backref=backref('parent', lazy='joined',
+                               remote_side=badge_table.c.id),
+           )})
 
 
 mapper(DelegateableBadge, inherits=badge_mapper,
@@ -335,7 +346,9 @@ mapper(Instance, instance_table, properties={
         primaryjoin=instance_table.c.creator_id == user_table.c.id,
         backref=backref('created_instances')),
     'locale': synonym('_locale', map_column=True),
-    'default_group': relation(Group, lazy=True)
+    'default_group': relation(Group, lazy=True),
+    'votedetail_userbadges': relation(UserBadge, lazy=True,
+                                      secondary=votedetail_table)
 })
 
 
@@ -425,13 +438,93 @@ mapper(Selection, selection_table, properties={
 
 mapper(RequestLog, requestlog_table)
 
+mapper(StaticPage, staticpage_table)
+
+
+mapper(Message, message_table, properties={
+    'creator': relation(
+        User, lazy=True,
+        primaryjoin=message_table.c.creator_id == user_table.c.id),
+})
+
+
+mapper(MessageRecipient, message_recipient_table, properties={
+    'message': relation(
+        Message, lazy=False, primaryjoin=(
+            message_table.c.id == message_recipient_table.c.message_id
+        ), backref=backref('recipients', lazy=True)
+    ),
+    'recipient': relation(
+        User, lazy=False, primaryjoin=(
+            user_table.c.id == message_recipient_table.c.recipient_id
+        ), backref=backref('messages', lazy=True)
+    ),
+})
+
+
+DELETE = "delete"
+INSERT = "insert"
+UPDATE = "update"
+
+
+def before_flush(session, flush_context, instances):
+    if not hasattr(session, '_object_cache'):
+        session._object_cache = {INSERT: set(),
+                                 DELETE: set(),
+                                 UPDATE: set()}
+    session._object_cache[INSERT].update(session.new)
+    session._object_cache[DELETE].update(session.deleted)
+    session._object_cache[UPDATE].update(session.dirty)
+
+
+def before_commit(session):
+    from adhocracy.lib import cache
+
+    session.flush()
+    if not hasattr(session, '_object_cache'):
+        return
+
+    for operation, entities in session._object_cache.items():
+        for entity in entities:
+            post_update(entity, operation)
+
+    #for entity in session._object_cache[INSERT]:
+
+    for entity in session._object_cache[UPDATE]:
+        cache.invalidate(entity)
+
+    for entity in session._object_cache[DELETE]:
+        cache.invalidate(entity)
+
+    del session._object_cache
+
+
+def post_update(entity, operation):
+    '''
+    Post an update task for the entity and any related objects.
+    '''
+    from adhocracy.lib import queue
+    queue.update_entity(entity, operation)
+
+    ## Do subsequent updates to reindex related content
+    # NOTE: This may post duplicate update tasks if an entity
+    # is part of the session, and also updated depending on
+    # another entity. Ignored for now cause the real work
+    # is asynchronous and (probably) not expensive.
+    # NOTE: Move the decisions about which other objects to
+    # update to the models
+    if isinstance(entity, Poll):
+        queue.update_entity(entity.scope, UPDATE)
+
 
 def init_model(engine):
     """Call me before using any of the tables or classes in the model"""
     if meta.Session is not None:
         return
     sm = orm.sessionmaker(autoflush=True,
-                          bind=engine,
-                          extension=SessionModificationExtension())
+                          bind=engine)
     meta.engine = engine
     meta.Session = orm.scoped_session(sm)
+
+    sa_event.listen(meta.Session, "before_commit", before_commit)
+    sa_event.listen(meta.Session, "before_flush", before_flush)

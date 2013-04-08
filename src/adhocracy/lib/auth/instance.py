@@ -1,4 +1,6 @@
 from pylons import tmpl_context as c, app_globals as g
+from authorization import has
+from adhocracy.lib.auth.authorization import NOT_LOGGED_IN
 
 
 def index(check):
@@ -24,6 +26,12 @@ def edit(check, i):
 admin = edit
 
 
+def any_admin(check):
+    if has('global.admin'):
+        return
+    check.perm('instance.admin')
+
+
 def authenticated_edit(check, instance):
     '''
     Edit allowed only in authenticated instances
@@ -42,7 +50,7 @@ def join(check, i):
     check.other('instance_frozen', i.frozen)
     show(check, i)
     check.perm('instance.join')
-    check.other('not_logged_in', not c.user)
+    check.other(NOT_LOGGED_IN, not c.user)
     if c.user:
         check.other('user_is_member', c.user.is_member(i))
 

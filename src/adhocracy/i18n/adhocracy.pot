@@ -5,9 +5,9 @@
 ##, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: adhocracy 2.0.0-rc.1\n"
+"Project-Id-Version: adhocracy 871094a\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2013-02-18 01:48+0100\n"
+"POT-Creation-Date: 2013-04-03 13:05+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -23,6 +23,12 @@ msgid "Please insert a subject for the mail we will send to the users."
 msgstr ""
 
 msgid "Please insert a template for the mail we will send to the users."
+msgstr ""
+
+msgid "Solr index updated."
+msgstr ""
+
+msgid "Welcoming requested, but not enabled"
 msgstr ""
 
 msgid "In all instances"
@@ -126,6 +132,9 @@ msgstr ""
 msgid "Badges"
 msgstr ""
 
+msgid "Mass message service"
+msgstr ""
+
 msgid "Members import"
 msgstr ""
 
@@ -179,6 +188,23 @@ msgstr ""
 msgid "You cannot manipulate one instance from within another instance."
 msgstr ""
 
+msgid "Sorry, but you're not allowed to set these message options"
+msgstr ""
+
+msgid "Email isn't activated"
+msgstr ""
+
+msgid "Not permitted in system settings"
+msgstr ""
+
+#, python-format
+msgid "Could not render message: %s"
+msgstr ""
+
+#, python-format
+msgid "Message sent to %d users."
+msgstr ""
+
 #, python-format
 msgid "[%s] Message from %s: %s"
 msgstr ""
@@ -214,6 +240,9 @@ msgid "You're not authorized to change %s's settings."
 msgstr ""
 
 msgid "Successfully removed OpenID from account"
+msgstr ""
+
+msgid "OpenID login has been disabled on this installation"
 msgstr ""
 
 msgid "OpenID login failed."
@@ -362,7 +391,20 @@ msgstr ""
 msgid "Page not Found"
 msgstr ""
 
+msgid "Page does already exist. Select another key or language."
+msgstr ""
+
+msgid "Page updated"
+msgstr ""
+
+msgid "Cannot find static page to edit"
+msgstr ""
+
 msgid "The requested page was not found"
+msgstr ""
+
+#, python-format
+msgid "Tag \"%s\" has been removed from %s \"%s\"."
 msgstr ""
 
 msgid "You have been logged out while authenticating at twitter. Please try again."
@@ -382,6 +424,9 @@ msgid "Sorry, registration has been disabled by administrator."
 msgstr ""
 
 msgid "Sorry, but we don't accept registrations with this email address."
+msgstr ""
+
+msgid "Password has been set. Have fun!"
 msgstr ""
 
 msgid "There is no user registered with that email address."
@@ -428,7 +473,16 @@ msgstr ""
 msgid "The activation link has been re-sent to your email address."
 msgstr ""
 
+msgid "Invalid login"
+msgstr ""
+
+msgid "Invalid email / user name or password"
+msgstr ""
+
 msgid "Invalid user name or password"
+msgstr ""
+
+msgid "Invalid email or password"
 msgstr ""
 
 msgid "tutorial_dashboard_title"
@@ -460,6 +514,9 @@ msgstr ""
 
 #, python-format
 msgid "%s is banned from the system."
+msgstr ""
+
+msgid "You already have a password - use that to log in."
 msgstr ""
 
 msgid "A watchlist entry for this entity already exists."
@@ -502,6 +559,12 @@ msgstr ""
 msgid "An instance with that key already exists"
 msgstr ""
 
+msgid "No static key is given"
+msgstr ""
+
+msgid "The static key is invalid"
+msgstr ""
+
 #, python-format
 msgid "No entity with ID '%s' exists"
 msgstr ""
@@ -528,12 +591,25 @@ msgstr ""
 msgid "No Badge ID '%s' exists"
 msgstr ""
 
+msgid "Duplicates in input set of user badge IDs"
+msgstr ""
+
+#, python-format
+msgid "Could not find badges %s"
+msgstr ""
+
 #, python-format
 msgid "Cannot use global category %s in this instance"
 msgstr ""
 
 #, python-format
 msgid "Badge with ID '%s' not valid in this instance"
+msgstr ""
+
+msgid "Parent and child category instance have to match"
+msgstr ""
+
+msgid "You shall not create cycles!"
 msgstr ""
 
 #, python-format
@@ -624,10 +700,10 @@ msgstr ""
 msgid "You need to insert the following placeholders into the email text so we can insert enough information for the user: %s"
 msgstr ""
 
-msgid "Today"
+msgid "Please select at least one instance"
 msgstr ""
 
-msgid "Yesterday"
+msgid "Disallowed instance selected"
 msgstr ""
 
 #, python-format
@@ -703,6 +779,15 @@ msgid "this email is to check the email address you have provided. In order to c
 msgstr ""
 
 msgid "Confirm your email address"
+msgstr ""
+
+msgid "Dear Ms."
+msgstr ""
+
+msgid "Dear Mr."
+msgstr ""
+
+msgid "Dear"
 msgstr ""
 
 msgid "activity"
@@ -799,10 +884,6 @@ msgid "Support"
 msgstr ""
 
 msgid "Newest Proposals"
-msgstr ""
-
-#, python-format
-msgid "Missing page: %s"
 msgstr ""
 
 #, python-format
@@ -1098,6 +1179,9 @@ msgstr ""
 msgid "Adhocracy"
 msgstr ""
 
+msgid "delete"
+msgstr ""
+
 #, python-format
 msgid "%s (deleted user)"
 msgstr ""
@@ -1194,6 +1278,15 @@ msgid "Submit"
 msgstr ""
 
 msgid "List existing feedback"
+msgstr ""
+
+msgid "Proposal Category"
+msgstr ""
+
+msgid "No Category"
+msgstr ""
+
+msgid "Others"
 msgstr ""
 
 msgid "code of conduct"
@@ -1295,16 +1388,26 @@ msgstr ""
 msgid "Filter list"
 msgstr ""
 
-msgid "Remove all"
-msgstr ""
-
-msgid "remove"
+msgid "reset"
 msgstr ""
 
 msgid "Sort:"
 msgstr ""
 
+#, python-format
+msgid "Welcome to %s!"
+msgstr ""
+
+msgid "Please choose a password:"
+msgstr ""
+
+msgid "Set Password"
+msgstr ""
+
 msgid "Get an account to participate in the discussion."
+msgstr ""
+
+msgid "Log in to participate in the discussion."
 msgstr ""
 
 msgid "Register"
@@ -1330,6 +1433,9 @@ msgid "Send activation link"
 msgstr ""
 
 msgid "Edit profile"
+msgstr ""
+
+msgid "This instance has been frozen - you can not edit or post anything."
 msgstr ""
 
 msgid "You need to set an email in your profile in order to contribute to this instance."
@@ -1361,6 +1467,9 @@ msgid "A total of <a href=\"%(url)s\">%(votes)s Votes</a>, thereof %(for)s ayes 
 msgstr ""
 
 msgid "Votes"
+msgstr ""
+
+msgid "Votes by User Group"
 msgstr ""
 
 msgid "Shortlink"
@@ -1423,6 +1532,9 @@ msgstr ""
 msgid "Import users"
 msgstr ""
 
+msgid "Generate welcome codes"
+msgstr ""
+
 msgid "Import badges"
 msgstr ""
 
@@ -1478,6 +1590,12 @@ msgid "Import Users"
 msgstr ""
 
 msgid "Update Search Index"
+msgstr ""
+
+msgid "Static Pages"
+msgstr ""
+
+msgid "Send an email to users"
 msgstr ""
 
 msgid "Site administration"
@@ -1607,7 +1725,19 @@ msgstr ""
 msgid "Global"
 msgstr ""
 
-msgid "Other instances"
+msgid "Parent Badge"
+msgstr ""
+
+msgid "No Parent Badge"
+msgstr ""
+
+msgid "Global categories"
+msgstr ""
+
+msgid "Local instance categories"
+msgstr ""
+
+msgid "Description to select children of this badge (irrelevant if this badge doesn't have any children)"
 msgstr ""
 
 msgid "Save Badge"
@@ -1644,6 +1774,9 @@ msgid "yes"
 msgstr ""
 
 msgid "no"
+msgstr ""
+
+msgid "Parent"
 msgstr ""
 
 msgid "User Badges"
@@ -1736,9 +1869,6 @@ msgid "This comment has been deleted."
 msgstr ""
 
 msgid "edit"
-msgstr ""
-
-msgid "delete"
 msgstr ""
 
 msgid "1 Comment"
@@ -2078,6 +2208,12 @@ msgstr ""
 msgid "Enable vote delegation"
 msgstr ""
 
+msgid "Break down Voting Result by Badge"
+msgstr ""
+
+msgid "Display how the users with the selected badges feel about the issue."
+msgstr ""
+
 msgid "Home"
 msgstr ""
 
@@ -2152,11 +2288,45 @@ msgid_plural "%s norms"
 msgstr[0] ""
 msgstr[1] ""
 
-#, python-format
-msgid "Message %s"
+msgid "Send mass message"
+msgstr ""
+
+msgid "Please note that only users with verified email addresses and activated newsservice will receive this message per email."
+msgstr ""
+
+msgid "Filter users ..."
+msgstr ""
+
+msgid "... by instance:"
+msgstr ""
+
+msgid "... by badge:"
 msgstr ""
 
 msgid "Subject"
+msgstr ""
+
+msgid "Body"
+msgstr ""
+
+msgid "Use {email}, {name}, {salutation} to address the user directly."
+msgstr ""
+
+msgid "Sender identity"
+msgstr ""
+
+msgid "Mass Message Preview"
+msgstr ""
+
+#, python-format
+msgid "You're about to send the following message to %s recipients:"
+msgstr ""
+
+msgid "The message will go to the following users:"
+msgstr ""
+
+#, python-format
+msgid "Message %s"
 msgstr ""
 
 msgid "Your e-mail address will be included in this message to give the recipient a method to reply to you."
@@ -2196,9 +2366,6 @@ msgid "Please use the DD.MM.YYYY format."
 msgstr ""
 
 msgid "Category"
-msgstr ""
-
-msgid "No Category"
 msgstr ""
 
 msgid "Create a new milestone."
@@ -2329,6 +2496,12 @@ msgid "Variant Name"
 msgstr ""
 
 msgid "Text"
+msgstr ""
+
+msgid "Formatting"
+msgstr ""
+
+msgid "Use markdown formatting."
 msgstr ""
 
 msgid "Parent page:"
@@ -2587,9 +2760,6 @@ msgstr ""
 msgid "Proposal goals"
 msgstr ""
 
-msgid "Proposal Category"
-msgstr ""
-
 msgid "Collaboration and Notification"
 msgstr ""
 
@@ -2845,6 +3015,40 @@ msgstr ""
 msgid "compare"
 msgstr ""
 
+#, python-format
+msgid "Edit %(key)s (%(langname)s)"
+msgstr ""
+
+msgid "Title:"
+msgstr ""
+
+msgid "Content of the page"
+msgstr ""
+
+msgid "Change static page"
+msgstr ""
+
+msgid "Back to the list"
+msgstr ""
+
+msgid "Key"
+msgstr ""
+
+msgid "Create new page"
+msgstr ""
+
+msgid "New Static Page"
+msgstr ""
+
+msgid "New static page"
+msgstr ""
+
+msgid "Key:"
+msgstr ""
+
+msgid "Add static page"
+msgstr ""
+
 msgid "Tags are keywords used to find, sort and filter proposals and documents."
 msgstr ""
 
@@ -2888,9 +3092,6 @@ msgstr ""
 
 #, python-format
 msgid "discuss (%s comments) &raquo;"
-msgstr ""
-
-msgid "Title:"
 msgstr ""
 
 msgid "Variant:"
@@ -3072,6 +3273,12 @@ msgstr ""
 msgid "Re-send activation link"
 msgstr ""
 
+msgid "Receive occasional news from instance administrators."
+msgstr ""
+
+msgid "Receive news service"
+msgstr ""
+
 msgid "OpenID"
 msgstr ""
 
@@ -3079,6 +3286,9 @@ msgid "OpenID allows you to use a single login on many web sites."
 msgstr ""
 
 msgid "There are no associated OpenIDs."
+msgstr ""
+
+msgid "remove"
 msgstr ""
 
 msgid "Short biography"
@@ -3131,7 +3341,13 @@ msgstr ""
 msgid "If you have an account but you've lost your password, <a href='/reset'>click here</a>."
 msgstr ""
 
+msgid "Email or username:"
+msgstr ""
+
 msgid "Login:"
+msgstr ""
+
+msgid "Email:"
 msgstr ""
 
 msgid "Register new account"

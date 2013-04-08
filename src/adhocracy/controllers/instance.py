@@ -8,21 +8,19 @@ from formencode import validators
 
 from paste.deploy.converters import asbool, asint
 
-from pylons import request, response, tmpl_context as c, config, session
+from pylons import request, response, tmpl_context as c, config
 from pylons.controllers.util import abort, redirect
 from pylons.decorators import validate
 from pylons.i18n import _, lazy_ugettext as L_
-
-from repoze.what.plugins.pylonshq import ActionProtector
 
 from adhocracy import forms, i18n, model
 from adhocracy.controllers.admin import AdminController, UserImportForm
 from adhocracy.controllers.badge import BadgeController
 from adhocracy.lib.instance import RequireInstance
 from adhocracy.lib import event, helpers as h, logo, pager, sorting, tiles
-from adhocracy.lib.auth import authorization, can, csrf, require
+from adhocracy.lib.auth import can, csrf, require, guard
 from adhocracy.lib.base import BaseController
-from adhocracy.lib.queue import post_update
+from adhocracy.lib.queue import update_entity
 from adhocracy.lib.templating import (render, render_json, render_png,
                                       ret_abort, ret_success, render_def)
 from adhocracy.lib.util import get_entity_or_abort
@@ -138,6 +136,7 @@ class InstanceVotingEditForm(formencode.Schema):
                                            if_missing=False)
     activation_delay = validators.Int(not_empty=True)
     required_majority = validators.Number(not_empty=True)
+    votedetail_badges = forms.ValidUserBadges()
 
 
 class InstanceBadgesEditForm(formencode.Schema):
@@ -172,7 +171,21 @@ class InstanceController(BaseController):
 
     def new(self):
         require.instance.create()
-        return render("/instance/new.html")
+
+        data = {}
+        protocol = config.get('adhocracy.protocol', 'http').strip()
+        domain = config.get('adhocracy.domain').strip()
+
+        if asbool(config.get('adhocracy.relative_urls', 'false')):
+            data['url_pre'] = '%s://%s/i/' % (protocol, domain)
+            data['url_post'] = ''
+            data['url_right_align'] = False
+        else:
+            data['url_pre'] = '%s://' % protocol
+            data['url_post'] = '.%s' % domain
+            data['url_right_align'] = True
+
+        return render("/instance/new.html", data)
 
     @csrf.RequireInternalRequest(methods=['POST'])
     @validate(schema=InstanceCreateForm(), form="new", post_only=True)
@@ -204,23 +217,9 @@ class InstanceController(BaseController):
             redirect(h.entity_url(c.page_instance))
 
         c.tile = tiles.instance.InstanceTile(c.page_instance)
-        proposals = model.Proposal.all(instance=c.page_instance)
-        c.new_proposals_pager = pager.proposals(
-            proposals, size=7, enable_sorts=False,
-            enable_pages=False, default_sort=sorting.entity_newest)
-
         c.sidebar_delegations = (_('Delegations are enabled.') if
                                  c.page_instance.allow_delegate else
                                  _('Delegations are disabled.'))
-
-        #pages = model.Page.all(instance=c.page_instance,
-        #        functions=[model.Page.NORM])
-        #c.top_pages_pager = pager.pages(
-        #    pages, size=7, enable_sorts=False,
-        #    enable_pages=False, default_sort=sorting.norm_selections)
-        #tags = model.Tag.popular_tags(limit=40)
-        #c.tags = sorted(text.tag_cloud_normalize(tags),
-        #                key=lambda (k, c, v): k.name)
 
         if asbool(config.get('adhocracy.show_instance_overview_milestones')) \
                 and c.page_instance.milestones:
@@ -235,18 +234,45 @@ class InstanceController(BaseController):
                 milestones, size=number, enable_sorts=False,
                 enable_pages=False, default_sort=sorting.milestone_time)
 
-        events = model.Event.find_by_instance(c.page_instance, limit=3)
+        c.events_pager = None
+        if asbool(config.get('adhocracy.show_instance_overview_events',
+                             'true')):
+            events = model.Event.find_by_instance(c.page_instance, limit=3)
+            c.events_pager = pager.events(events,
+                                          enable_pages=False,
+                                          enable_sorts=False)
 
-        c.events_pager = pager.events(events,
-                                      enable_pages=False,
-                                      enable_sorts=False)
+        proposals = model.Proposal.all(instance=c.page_instance)
 
-        c.stats = {
-            'comments': model.Comment.all_q().count(),
-            'proposals': model.Proposal.all_q(
-                instance=c.page_instance).count(),
-            'members': model.Membership.all_q().count()
-        }
+        show_new_proposals_cfg = config.get(
+            'adhocracy.show_instance_overview_proposals_new')
+        if show_new_proposals_cfg is None:
+            # Fall back to legacy option
+            show_new_proposals = asbool(config.get(
+                'adhocracy.show_instance_overview_proposals', 'true'))
+        else:
+            show_new_proposals = asbool(show_new_proposals_cfg)
+        c.new_proposals_pager = None
+        if asbool(show_new_proposals):
+            c.new_proposals_pager = pager.proposals(
+                proposals, size=7, enable_sorts=False,
+                enable_pages=False, default_sort=sorting.entity_newest)
+
+        c.all_proposals_pager = None
+        if asbool(config.get('adhocracy.show_instance_overview_proposals_all',
+                             'false')):
+            c.all_proposals_pager = pager.proposals(proposals)
+
+        c.stats = None
+        if asbool(config.get('adhocracy.show_instance_overview_stats',
+                             'true')):
+            c.stats = {
+                'comments': model.Comment.all_q().count(),
+                'proposals': model.Proposal.all_q(
+                    instance=c.page_instance).count(),
+                'members': model.Membership.all_q().count()
+            }
+
         c.tutorial_intro = _('tutorial_instance_show_intro')
         c.tutorial = 'instance_show'
         return render("/instance/show.html")
@@ -295,11 +321,14 @@ class InstanceController(BaseController):
         badges = sorted(badges, key=lambda badge: badge.title)
         return badges
 
-    @ActionProtector(authorization.has_permission("global.admin"))
+    @guard.perm("global.admin")
     def badges(self, id, errors=None, format='html'):
         instance = get_entity_or_abort(model.Instance, id)
         c.badges = self._editable_badges(instance)
-        defaults = {'badge': [str(badge.id) for badge in instance.badges]}
+        defaults = {
+            'badge': [str(badge.id) for badge in instance.badges],
+            '_tok': csrf.token_id(),
+        }
         if format == 'ajax':
             checked = [badge.id for badge in instance.badges]
             json = {'title': instance.label,
@@ -315,7 +344,7 @@ class InstanceController(BaseController):
             defaults=defaults)
 
     @validate(schema=InstanceBadgesForm(), form='badges')
-    @ActionProtector(authorization.has_permission("global.admin"))
+    @guard.perm("global.admin")
     @csrf.RequireInternalRequest(methods=['POST'])
     def update_badges(self, id, format='html'):
         instance = get_entity_or_abort(model.Instance, id)
@@ -334,7 +363,7 @@ class InstanceController(BaseController):
                 badge.assign(instance, c.user)
 
         model.meta.Session.commit()
-        post_update(instance, model.update.UPDATE)
+        update_entity(instance, model.UPDATE)
         if format == 'ajax':
             obj = {'html': render_def('/badge/tiles.html', 'badges',
                                       badges=instance.badges)}
@@ -367,6 +396,8 @@ class InstanceController(BaseController):
             setting('contents', L_('Contents')),
             setting('voting', L_('Votings')),
             setting('badges', L_('Badges')),
+            setting('massmessage', L_('Mass message service'),
+                    allowed=(can.message.create(instance))),
             setting('members_import', L_('Members import'),
                     allowed=(h.has_permission('global.admin') or
                              can.instance.authenticated_edit(instance)))])
@@ -624,21 +655,31 @@ class InstanceController(BaseController):
                 {'value': majority[0],
                  'label': h.literal(majority[1]),
                  'selected': c.page_instance.required_majority == majority[0]})
+        if model.votedetail.is_enabled():
+            c.votedetail_all_userbadges = model.UserBadge.all(
+                instance=c.page_instance, include_global=True)
+        else:
+            c.votedetail_all_userbadges = None
+
         return render("/instance/settings_voting.html")
 
     @RequireInstance
     def settings_voting(self, id):
         c.page_instance = self._get_current_instance(id)
         require.instance.edit(c.page_instance)
+        defaults = {
+            '_method': 'PUT',
+            'required_majority': c.page_instance.required_majority,
+            'activation_delay': c.page_instance.activation_delay,
+            'allow_adopt': c.page_instance.allow_adopt,
+            'allow_delegate': c.page_instance.allow_delegate,
+            '_tok': csrf.token_id()}
+        if model.votedetail.is_enabled():
+            defaults['votedetail_badges'] = [
+                b.id for b in c.page_instance.votedetail_userbadges]
         return htmlfill.render(
             self.settings_voting_form(id),
-            defaults={
-                '_method': 'PUT',
-                'required_majority': c.page_instance.required_majority,
-                'activation_delay': c.page_instance.activation_delay,
-                'allow_adopt': c.page_instance.allow_adopt,
-                'allow_delegate': c.page_instance.allow_delegate,
-                '_tok': csrf.token_id()})
+            defaults=defaults)
 
     @RequireInstance
     @csrf.RequireInternalRequest(methods=['POST'])
@@ -653,6 +694,14 @@ class InstanceController(BaseController):
             c.page_instance, self.form_result,
             ['required_majority', 'activation_delay', 'allow_adopt',
              'allow_delegate'])
+
+        if model.votedetail.is_enabled():
+            new_badges = self.form_result['votedetail_badges']
+            updated_vd = c.page_instance.votedetail_userbadges != new_badges
+            if updated_vd:
+                c.page_instance.votedetail_userbadges = new_badges
+            updated = updated or updated_vd
+
         return self.settings_result(updated, c.page_instance, 'voting')
 
     def badge_controller(self, instance):
@@ -848,7 +897,8 @@ class InstanceController(BaseController):
                            message=_("You've left %(instance)s.") % {
                                'instance': c.page_instance.label})
 
-    def _get_current_instance(self, id):
+    @classmethod
+    def _get_current_instance(cls, id):
         if id != c.instance.key:
             abort(403, _("You cannot manipulate one instance from within "
                          "another instance."))

@@ -102,6 +102,17 @@ use = egg:adhocracy
 full_stack = true
 static_files = true
 
+# INSTALL: To enable set email_src to 'local' or 'imap', IMAP-SSL is essential.
+# If 'imap_account = user' fails, try complete address: 'user@emailprovider.tld'.
+# Set local_user to determine the standard-mbox/Maildir-folders you want to watch.
+email_src = None
+local_user = None
+imap_domain = imap.emailprovider.tld
+imap_account = user
+imap_password = password
+imap_directory = inbox
+imap_port = 993
+
 cache_dir = ${parts.buildout.directory}/var/data
 beaker.session.key = adhocracy_state
 {% python

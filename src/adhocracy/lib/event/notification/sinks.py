@@ -1,8 +1,8 @@
 import logging
-
+import hashlib
 from pylons import config
 from webhelpers import text
-
+from pylons.i18n import _
 from adhocracy.lib import mail, microblog
 
 TWITTER_LENGTH = 140
@@ -40,6 +40,16 @@ def twitter_sink(pipeline):
 
 
 def mail_sink(pipeline):
+    """
+    Generates email-adress for comment-replies in the form of
+    subscription.userid-commentid.security-token@domain.tld
+    if the notification is about a new comment.
+    HTML will be activated. If a user can not display HTML-emails
+    the multipart/alternative plaintext-part will display the
+    default notification.body. Otherwise an HTML-email is only
+    a beautified version.
+    This feature is not yet completed.
+    """
     for notification in pipeline:
         if notification.user.is_email_activated() and \
                 notification.priority >= notification.user.email_priority:
@@ -49,10 +59,37 @@ def mail_sink(pipeline):
 
             log.debug("mail to %s: %s" % (notification.user.email,
                                           notification.subject))
-            mail.to_user(notification.user,
-                         notification.subject,
-                         notification.body,
-                         headers=headers)
 
+            if str(notification.event.event) == "t_comment_create" or \
+                    str(notification.event.event) == "n_comment_reply":
+                html = False  # deactivated due to parsing
+                secrets = config.get("adhocracy.session.secret")
+                email_from = config.get("adhocracy.email.from")
+
+                email_domain = email_from.rpartition("@")
+                email_domain = email_domain[1] + email_domain[2]
+
+                user_id = str(notification.user.id)
+
+                comment_id = notification.link.split("#c")[-1]
+
+                sec_token = user_id + comment_id + secrets
+                sec_token = hashlib.sha1(sec_token).hexdigest()
+
+                seq = (u" <subs.", user_id, u"-", comment_id, u".",
+                        sec_token, email_domain, u">")
+                reply_to = "".join(seq)
+                reply_msg = _(u"\"Reply to leave a comment\"")
+                reply_to = reply_msg + reply_to
+
+                headers['In-Reply-To'] = reply_to
+            else:
+                html = False
+
+            mail.to_user(notification.user,
+                    notification.subject,
+                    notification.body,
+                    headers=headers,
+                    html=html)
         else:
             yield notification

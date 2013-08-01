@@ -74,6 +74,8 @@ setup(
         "setuptools_git >= 0.3",
         "ipaddress>=1.0.3",
         "pytz",
+        "pyinotify>=0.9.4",
+        "imaplib2>=2.28.1",
     ],
     setup_requires=["setuptools>=0.6c6",  # fix OS X 10.5.7
                     "PasteScript",
@@ -111,6 +113,7 @@ setup(
         ],
         'paste.paster_command': [
             'worker = adhocracy.lib.cli:Worker',
+            'ecworker = adhocracy.lib.cli:EmailCommentWorker',
             'timer = adhocracy.lib.cli:Timer',
             'index = adhocracy.lib.cli:Index'
         ],

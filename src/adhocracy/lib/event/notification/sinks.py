@@ -60,9 +60,11 @@ def mail_sink(pipeline):
             log.debug("mail to %s: %s" % (notification.user.email,
                                           notification.subject))
 
+            notification_body = notification.body
+
             if str(notification.event.event) == "t_comment_create" or \
                     str(notification.event.event) == "n_comment_reply":
-                html = False  # deactivated due to parsing
+
                 secrets = config.get("adhocracy.session.secret")
                 email_from = config.get("adhocracy.email.from")
 
@@ -83,13 +85,36 @@ def mail_sink(pipeline):
                 reply_to = reply_msg + reply_to
 
                 headers['In-Reply-To'] = reply_to
+
+                vote_line = (u"vote 0\r\n\r\n" + _(u"Type your answer here.") +
+                u"\r\n\r\n_________________________\r\n")
+
+                notification_body = (_(u"comment by replying to this email.") +
+                u"\r\n" + _(u"Write your answer above the upper line.") +
+                u"\r\n\r\n" + _(u"You can use the first line of your reply") +
+                u" " + _(u"to vote. Type vote 1 for a positive vote,") +
+                u" " + _(u"vote 0 for a neutral vote and vote -1 for a") +
+                u" " + _(u"negative vote\r\n\r\n") + notification_body)
+
+                notification_body = vote_line + (_(u"Hi %s,") %
+                    notification.user.name +
+                    u"\r\n%s\r\n\r\n" % notification_body +
+                    _(u"Cheers,\r\n\r\n"
+                    u"    the %s Team\r\n") %
+                    config.get('adhocracy.site.name'))
+
+                html = False
+                # html deactivated due to email-comment parsing/voting
+                decorate_body = False
             else:
                 html = False
+                decorate_body = True
 
             mail.to_user(notification.user,
                     notification.subject,
-                    notification.body,
+                    notification_body,
                     headers=headers,
-                    html=html)
+                    html=html,
+                    decorate_body=decorate_body)
         else:
             yield notification

@@ -1,9 +1,0 @@
-tree e981b8f97ef54808aae69bfb8d145108b8062c8a
-parent ce1d855668eb1a938cece2b5bfc3666c1fee82f0
-author Nicolas Dietrich <nicodietrich@gmail.com> 1375302727 +0200
-committer Nicolas Dietrich <nicodietrich@gmail.com> 1375302727 +0200
-
-Remove unneeded file again
-
-templates/user/edit.html has been accidently readded in
-03f382dac7e0248f221a94f51854c8f79191d961.

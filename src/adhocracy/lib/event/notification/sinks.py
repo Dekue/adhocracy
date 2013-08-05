@@ -89,12 +89,12 @@ def mail_sink(pipeline):
                 vote_line = (u"vote 0\r\n\r\n" + _(u"Type your answer here.") +
                 u"\r\n\r\n_________________________\r\n")
 
-                notification_body = (_(u"comment by replying to this email.") +
-                u"\r\n" + _(u"Write your answer above the upper line.") +
-                u"\r\n\r\n" + _(u"You can use the first line of your reply") +
-                u" " + _(u"to vote. Type vote 1 for a positive vote,") +
-                u" " + _(u"vote 0 for a neutral vote and vote -1 for a") +
-                u" " + _(u"negative vote\r\n\r\n") + notification_body)
+                notification_body = _((u"comment by replying to this email."
+                u"\r\nWrite your answer above the upper line."
+                u"\r\n\r\nYou can use the first line of your reply"
+                u" to vote. Type vote 1 for a positive vote,"
+                u" vote 0 for a neutral vote and vote -1 for a"
+                u" negative vote.\r\n\r\n") + notification_body)
 
                 notification_body = vote_line + (_(u"Hi %s,") %
                     notification.user.name +

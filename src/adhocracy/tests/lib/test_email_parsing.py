@@ -139,18 +139,6 @@ The Message"""),
         self.assertEqual(ctr(u'image/png; name=bar.foobar.png'), (u'png', u'bar.foobar'))
 
 
-    def test_delete_debris(self):
-        dd = adhocracy.lib.emailcomments.util.delete_debris
-        self.assertEqual(dd(u'foobar\n\n\n\n'), u'foobar')
-        self.assertEqual(dd(u'\n\nfoobar\n\n'), u'foobar')
-        self.assertEqual(dd(u'\n  foobar\n  '), u'foobar')
-        self.assertEqual(dd(u'  \nfoobar  \n'), u'foobar')
-        self.assertEqual(dd(u'  \nfoobar  \n'), u'foobar')
-        self.assertEqual(dd(u'\r\n    \n\nfoobar  \r\n   \n\n'), u'foobar')
-        self.assertEqual(dd(u'foo\n\n\n\n\nbar'), u'foo\n\nbar')
-        self.assertEqual(dd(u' \n  foo\r\n   \n   \n \n\r\nbar \n '), u'foo\n\nbar')
-
-
     def test_parse_local_part(self):
         '''test for admin'''
         from pylons import config

@@ -216,17 +216,6 @@ def html_to_markdown(text):
     return text
 
 
-def delete_debris(text):
-    '''deletes all ending and leading lines'''
-    replacements = [ur"(\n|\r|\s)*\Z",
-                    ur"\A(\n|\r|\s)*"]
-
-    for item in replacements:
-        text = re.sub(item, r"", text)
-
-    return text
-
-
 def delete_signatures(text):
     '''
     Deletes PGP or other signatures:

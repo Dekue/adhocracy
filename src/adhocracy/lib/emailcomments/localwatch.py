@@ -1,4 +1,3 @@
-import threading
 import pyinotify
 import logging
 import os
@@ -14,28 +13,23 @@ log = logging.getLogger(__name__)
 
 def maildir(path, ecq):
     '''gets payload and recipient of a new Maildir mail'''
-    lockmd = threading.Lock()
-    time.sleep(1)  # pause - else mail isn't yet recognized in FS
+    time.sleep(1)  # pause - else mail isn't yet in tmp
     log.info("new mail in Maildir")
 
-    lockmd.acquire()
-    try:
-        for filename in os.listdir(os.path.join(path, "new")):
-            file_path = os.path.join(path, "new", filename)
-            mail = open(file_path, "r")
-            parser = email.Parser.Parser()
-            message = parser.parse(mail)
-            mail.close()
-            ecq.put(message)
-            util.move_overwrite(file_path,
-                    os.path.join(path, "cur", filename))
-    finally:
-        lockmd.release()
+    for filename in os.listdir(os.path.join(path, "new")):
+        file_path = os.path.join(path, "new", filename)
+        mail = open(file_path, "r")
+        parser = email.Parser.Parser()
+        message = parser.parse(mail)
+        mail.close()
+        ecq.put(message)
+        util.move_overwrite(file_path,
+                os.path.join(path, "cur", filename))
 
 
 def mbox(path, ecq):
     '''gets payload and recipient of a new mbox mail'''
-    time.sleep(1)  # pause - else mail isn't yet recognized in FS
+    time.sleep(1)  # pause - MTA could do something yet
     log.info("new mail in mbox")
 
     tmp_mb = os.path.join("/var/tmp", str(datetime.now()))

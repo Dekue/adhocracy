@@ -102,6 +102,9 @@ def mail_sink(pipeline):
                     _(u"Cheers,\r\n\r\n"
                     u"    the %s Team\r\n") %
                     config.get('adhocracy.site.name'))
+                    
+                notification_body = notification_body + u"\n\n\n" + (_("Please"
+                u" write your answer above the upper line."))
 
                 html = False
                 # html deactivated due to email-comment parsing/voting

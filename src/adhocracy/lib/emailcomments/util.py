@@ -2,12 +2,40 @@ import os
 import shutil
 import logging
 import re
+import markdown
 from pylons.i18n import _
 from pylons import config
 from BeautifulSoup import BeautifulSoup
-import markdown
+from datetime import datetime
 
 log = logging.getLogger(__name__)
+
+
+def comment_exists(text, user, reply_id):
+    '''
+    Tries to determine if a comment already exists. This can be useful if
+    more than one worker watches the same Inbox and an email is fetched
+    multiple times. The last comments made by the user in a specific time
+    are checked on the same topic and the text itself.
+    If a user replied the same to the same topic in the last two minutes
+    the reply will be ignored.
+    '''
+    now = datetime.utcnow()
+
+    i = 0
+    for x in user.comments:
+        time_diff = now - user.comments[i].create_time
+        if time_diff.seconds < 120 and time_diff.days == 0:
+            cmp_text = user.comments[i].revisions[0].text
+            cmp_reply_id = user.comments[i].reply_id
+            if reply_id == cmp_reply_id:
+                if cmp_text == text:
+                    return False
+        else:
+            return True
+        i += 1
+
+    return True
 
 
 def content_type_reader(content_type):
@@ -212,6 +240,17 @@ def html_to_markdown(text):
 
     for i, j in replacements:
         text = re.sub(i, j, text, flags=re.IGNORECASE)
+
+    return text
+
+
+def delete_debris(text):
+    '''deletes all ending and leading lines'''
+    replacements = [ur"(\n|\r|\s)*\Z",
+                    ur"\A(\n|\r|\s)*"]
+
+    for item in replacements:
+        text = re.sub(item, r"", text)
 
     return text
 

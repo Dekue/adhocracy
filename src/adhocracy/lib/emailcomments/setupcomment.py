@@ -41,9 +41,12 @@ def setup_c(user_obj):
 
 def comment(user_obj, comment_obj, text, sentiment):
     '''
+    If comment does not already exist (inbox sync):
     Setup of template-ontext, request and permissions for instance/user.
     Finally teardown instance, request-environment and template-context.
     '''
+    if not util.comment_exists(text, user_obj, comment_obj.id):
+        return
     instance_filter.setup_thread(comment_obj.topic.instance)
     setup_req()
     setup_c(user_obj)

@@ -2,7 +2,6 @@ import os
 import shutil
 import logging
 import re
-import markdown
 from pylons.i18n import _
 from pylons import config
 from BeautifulSoup import BeautifulSoup

@@ -65,7 +65,7 @@ def mail_sink(pipeline):
             if str(notification.event.event) == "t_comment_create" or \
                     str(notification.event.event) == "n_comment_reply":
 
-                secrets = config.get("adhocracy.session.secret")
+                secrets = config.get("adhocracy.crypto.secret")
                 email_from = config.get("adhocracy.email.from")
 
                 email_domain = email_from.rpartition("@")
@@ -102,7 +102,7 @@ def mail_sink(pipeline):
                     _(u"Cheers,\r\n\r\n"
                     u"    the %s Team\r\n") %
                     config.get('adhocracy.site.name'))
-                    
+
                 notification_body = notification_body + u"\n\n\n" + (_("Please"
                 u" write your answer above the upper line."))
 

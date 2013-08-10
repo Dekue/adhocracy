@@ -105,6 +105,7 @@ def parse_payload(message):
             text = ""
         text = util.delete_signatures(text)
     text, sentiment = util.get_sentiment(text)
+    text = util.delete_debris(text)
     return (text, sentiment)
 
 
@@ -116,7 +117,7 @@ def parse_local_part(recipient):
 
     sec_token = result.group("sectoken")
 
-    secrets = config.get("adhocracy.session.secret")
+    secrets = config.get("adhocracy.crypto.secret")
 
     comp_str = result.group("userid") + result.group("commentid")
     comp_str = hashlib.sha1(comp_str + secrets).hexdigest()

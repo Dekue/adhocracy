@@ -245,12 +245,17 @@ def html_to_markdown(text):
 
 
 def delete_debris(text):
-    '''deletes all ending and leading lines'''
+    '''
+    Deletes all ending and leading lines, also shrinks number of lines
+    to two if more than three are concatenated at once.
+    '''
     replacements = [ur"(\n|\r|\s)*\Z",
                     ur"\A(\n|\r|\s)*"]
 
     for item in replacements:
         text = re.sub(item, r"", text)
+
+    text = re.sub(ur"((\n|\r\s*|\r\n\s*){3,})", u"\n\n", text)
 
     return text
 

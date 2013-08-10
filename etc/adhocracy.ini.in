@@ -104,9 +104,9 @@ static_files = true
 
 # INSTALL: To enable set email_src to 'local' or 'imap', IMAP-SSL is essential.
 # If 'imap_account = user' fails, try complete address: 'user@emailprovider.tld'.
-# Set local_user to determine the standard-mbox/Maildir-folders you want to watch.
-email_src = None
-local_user = None
+# Set local_user to determine the mbox/Maildir-folders you want to watch.
+email_src = none
+local_user = user
 imap_domain = imap.emailprovider.tld
 imap_account = user
 imap_password = password
@@ -476,4 +476,4 @@ format = %(asctime)s %(levelname)-5.5s [%(name)s] %(message)s
 # Custom OVERRIDE adhocracy settings 
 ############################################################## 
 
-${parts.adhocracy['settings_override']} 
+${parts.adhocracy['settings_override']}

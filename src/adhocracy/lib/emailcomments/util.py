@@ -29,9 +29,9 @@ def comment_exists(text, user, reply_id):
             cmp_reply_id = user.comments[i].reply_id
             if reply_id == cmp_reply_id:
                 if cmp_text == text:
-                    return False
+                    return True
         else:
-            return True
+            return False
         i += 1
 
     return True

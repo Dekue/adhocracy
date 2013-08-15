@@ -45,6 +45,7 @@ class Idler(threading.Thread):
                 continue
 
             recon_interval = 30
+            log.info("IMAP-connection established")
 
             while True:
                 try:
@@ -52,6 +53,7 @@ class Idler(threading.Thread):
                     self.conn.idle()
                 except self.conn.abort:
                     log.info("IMAP-connection lost, reconnecting...")
+                    break
 
     def dosync(self):
         '''executed if a new mail arrives'''

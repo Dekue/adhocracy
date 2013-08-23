@@ -154,7 +154,7 @@ The Message"""),
     def test_parse_local_part(self):
         '''test for admin'''
         from pylons import config
-        secrets = config.get("adhocracy.crypto.secret")
+        secrets = config.get("adhocracy.session.secret")
 
         comment = testtools.tt_make_comment()
 
@@ -176,3 +176,38 @@ The Message"""),
         self.assertEqual(plp(u'subs.1-1.feb340279618fb47d6c0feb340279618fb47d6c0@domain.tld'),None)
         self.assertEqual(plp(test_string), (user, comment))
         self.assertEqual(plp(fail_string), None)
+
+
+    def test_remove_notification(self):
+        rm = adhocracy.lib.emailcomments.util.remove_notification
+        self.assertEqual(rm(u"""first new line
+_________________________________
+some text here
+some text there
+_________________________________
+some new line"""), u"""first new line
+some new line""")
+        self.assertEqual(rm(u"""first new line
+>_________________________________
+>some text here
+>some text there
+>_________________________________
+some new line"""), u"""first new line
+
+some new line""")
+        self.assertEqual(rm(u"""first new line
+> _________________________________
+> some text here
+> some text there
+> _________________________________
+some new line"""), u"""first new line
+
+some new line""")
+        self.assertEqual(rm(u"""first new line
+foobar> _________________________________
+> some text here
+> some text there
+> _________________________________
+some new line"""), u"""first new line
+foobar
+some new line""")

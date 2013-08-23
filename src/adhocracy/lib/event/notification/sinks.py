@@ -65,7 +65,7 @@ def mail_sink(pipeline):
             if str(notification.event.event) == "t_comment_create" or \
                     str(notification.event.event) == "n_comment_reply":
 
-                secrets = config.get("adhocracy.crypto.secret")
+                secrets = config.get("adhocracy.session.secret")
                 email_from = config.get("adhocracy.email.from")
 
                 email_domain = email_from.rpartition("@")
@@ -85,33 +85,31 @@ def mail_sink(pipeline):
                 reply_to = reply_msg + reply_to
 
                 headers['In-Reply-To'] = reply_to
+                headers['Reply-To'] = reply_to
 
-                vote_line = (u"vote 0\r\n\r\n" + _(u"Type your answer here.") +
-                u"\r\n\r\n_________________________\r\n")
+                boundary = (u"_________________________________\r\n")
 
-                notification_body = (_(u"comment by replying to this email."
-                u"\r\nWrite your answer above the upper line."
+                notification_body = (_(u"Comment by replying to this email."
+                u"\r\nWrite your answer above the upper line or under the"
+                u" bottom line."
                 u"\r\n\r\nYou can use the first line of your reply"
                 u" to vote. Type vote 1 for a positive vote,"
                 u" vote 0 for a neutral vote and vote -1 for a"
                 u" negative vote.\r\n\r\n") + notification_body)
+                # Mention images? (Don't work with markdown safe_mode yet)
 
-                notification_body = vote_line + (_(u"Hi %s,") %
+                notification_body = boundary + (_(u"Hi %s,") %
                     notification.user.name +
                     u"\r\n%s\r\n\r\n" % notification_body +
                     _(u"Cheers,\r\n\r\n"
                     u"    the %s Team\r\n") %
-                    config.get('adhocracy.site.name'))
-
-                notification_body = notification_body + u"\n\n\n" + (_("Please"
-                u" write your answer above the upper line."))
+                    config.get('adhocracy.site.name')) + u"\r\n" + boundary
 
                 html = False
                 # html deactivated due to email-comment parsing/voting
                 decorate_body = False
             else:
                 html = False
-                decorate_body = True
 
             mail.to_user(notification.user,
                     notification.subject,

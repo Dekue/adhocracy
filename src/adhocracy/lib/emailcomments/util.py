@@ -87,6 +87,12 @@ def strip_local_part(recipient):
     return result
 
 
+def remove_notification(text):
+    '''removes notification if user didn't'''
+    text = re.sub(ur">*\s*_{33}(\r|\n|\r\n|.)*_{33}", u"", text)
+    return text
+
+
 def move_overwrite(src, dst):
     '''overwrite if a file with same name exists'''
     if os.path.exists(dst):

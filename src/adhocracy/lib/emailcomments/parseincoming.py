@@ -94,6 +94,7 @@ def parse_payload(message):
         else:
             content_list = parse_multipart(message, "na", 0)
         text = get_usable_content(content_list)
+        text = util.remove_notification(text)
         text = util.delete_signatures(text)
     else:
         if "text/plain" in message["Content-Type"]:
@@ -103,6 +104,7 @@ def parse_payload(message):
             text = util.html_to_markdown(text)
         else:
             text = ""
+        text = util.remove_notification(text)
         text = util.delete_signatures(text)
     text, sentiment = util.get_sentiment(text)
     text = util.delete_debris(text)
@@ -117,7 +119,7 @@ def parse_local_part(recipient):
 
     sec_token = result.group("sectoken")
 
-    secrets = config.get("adhocracy.crypto.secret")
+    secrets = config.get("adhocracy.session.secret")
 
     comp_str = result.group("userid") + result.group("commentid")
     comp_str = hashlib.sha1(comp_str + secrets).hexdigest()

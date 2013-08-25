@@ -106,8 +106,8 @@ def parse_payload(message):
             text = ""
         text = util.remove_notification(text)
         text = util.delete_signatures(text)
-    text, sentiment = util.get_sentiment(text)
     text = util.delete_debris(text)
+    text, sentiment = util.get_sentiment(text)
     return (text, sentiment)
 
 

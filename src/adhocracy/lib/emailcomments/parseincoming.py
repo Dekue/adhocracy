@@ -118,7 +118,7 @@ def parse_local_part(recipient):
         return None
 
     sec_token = result.group("sectoken")
-c
+
     secrets = config.get("adhocracy.crypto.secret")
 
     comp_str = result.group("userid") + result.group("commentid")

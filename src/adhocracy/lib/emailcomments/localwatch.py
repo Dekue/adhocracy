@@ -60,8 +60,6 @@ def watch_new_mail(path_md, path_mb, ecq):
 
     class PTmp(pyinotify.ProcessEvent):
 
-        path_decide = None
-
         def process_IN_CREATE(self, event):
             maildir(path_md, ecq)
 

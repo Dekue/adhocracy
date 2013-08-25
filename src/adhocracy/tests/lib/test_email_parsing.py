@@ -51,8 +51,8 @@ the PGP-signed message.
         self.assertEqual(rp(u'\n\t<br>\t\t\n\n<br>'), u'  \n  \n')
         self.assertEqual(rp(u'<body>foobar<br>\n\nbarfoo</body>'), u'foobar  \nbarfoo')
         self.assertEqual(rp(u'<b> foobar</b>'), u'**foobar**')
-        self.assertEqual(rp(u'<h2>foobar</h2>'), u'## foobar')
-        self.assertEqual(rp(u'<h2>foobar</h3>'), u'## foobar')
+        self.assertEqual(rp(u'<h2>foobar</h2>'), u'## foobar  \n')
+        self.assertEqual(rp(u'<h2>foobar</h3>'), u'## foobar  \n')
         self.assertEqual(rp(u'<body>foobar<br>\r\n\n\rbarfoo</body>'), u'foobar  \nbarfoo')
         self.assertEqual(rp(u"""<html>
   <head>
@@ -75,7 +75,7 @@ the PGP-signed message.
     <li>foo
     <li>    bar</li>
     </ul>
-    <h3>bla</h3><br>
+    <h3>bla</h3>
     <img src="foo.bar/bar.gif" alt="foo"><br>
     <img src="foo.bar/bar.gif"  >
     <img alt="bar"><br>

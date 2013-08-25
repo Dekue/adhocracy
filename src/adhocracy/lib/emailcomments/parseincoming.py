@@ -55,6 +55,7 @@ def get_usable_content(content_list):
     '''
     text = ""
     alt_set = []
+    image_list = []
     temp_alt_text = ""
     for rec_dep, alt_version, content_type, payload in content_list:
         if "na" in alt_version:
@@ -65,7 +66,7 @@ def get_usable_content(content_list):
             elif "text/html" in content_type:
                 text = text + util.html_to_markdown(payload)
             elif "image" in content_type:
-                text = text + save_image(payload, content_type)
+                image_list.append(save_image(payload, content_type))
         else:
             if not rec_dep in alt_set:
                 if "text/plain" in content_type:
@@ -74,7 +75,7 @@ def get_usable_content(content_list):
                     alt_set.append(rec_dep)
                     temp_alt_text = util.html_to_markdown(payload)
     text = text + temp_alt_text
-    return text
+    return text, image_list
 
 
 def parse_payload(message):
@@ -93,9 +94,11 @@ def parse_payload(message):
             content_list = parse_multipart(message, "a", 0)
         else:
             content_list = parse_multipart(message, "na", 0)
-        text = get_usable_content(content_list)
+        text, image_list = get_usable_content(content_list)
         text = util.remove_notification(text)
         text = util.delete_signatures(text)
+        for item in image_list:
+            text = text + item
     else:
         if "text/plain" in message["Content-Type"]:
             text = message.get_payload(decode=True)

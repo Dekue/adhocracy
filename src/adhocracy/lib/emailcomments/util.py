@@ -107,13 +107,12 @@ def get_sentiment(text):
     The Vote will be extracted and the line will be deleted if present.
     Also all leading newlines after vote-line will be deleted.
     '''
-    pattern = re.compile(ur"""\A(?:[vV]ote:?\s*)?
-                         (?P<sentiment>0|1|\+1?|-1?)
+    pattern = re.compile(ur"""\A(?:[vV][oO][tT][eE]:?\s*)?
+                         (?P<sentiment>0|1|\+1?|-1?)\s*
                          (?:\n|\r|\r\n)+
                          (?P<text>(.|\n|\r|\r\n)*)
                           """, re.VERBOSE)
     result = pattern.match(text)
-
     if result:
         text = result.group("text")
         sentiment = result.group("sentiment")
@@ -224,8 +223,6 @@ def html_to_markdown(text):
 
     replacements = [(ur"(\n|\r|\r\n)[\s]*|\t[\s]*", u""),
             (ur"\s{2,}", u" "),
-            (ur">\s*", u">"),
-            (ur"\s*<", u"<"),
             (ur"<br />", u"  \n"),
             (ur"(<b>[\s]*)|(</b>)", u"**"),
             (ur"(<strong>[\s]*)|(</strong>)", u"**"),
@@ -234,6 +231,7 @@ def html_to_markdown(text):
             (ur"<q>|<blockquote.*?>", u"  > "),
             (ur"</q>|</blockquote>", u"  \n\n"),
             (ur"<h([1-6])[\s]*>", h_repl),
+            (ur"</h([1-6])[\s]*>", u"  \n"),
             (u"<a.*?</a>", a_repl),
             (ur"<img.*?>", img_repl),
             (ur"</li>", u""),

@@ -154,7 +154,7 @@ The Message"""),
     def test_parse_local_part(self):
         '''test for admin'''
         from pylons import config
-        secrets = config.get("adhocracy.session.secret")
+        secrets = config.get("adhocracy.crypto.secret")
 
         comment = testtools.tt_make_comment()
 

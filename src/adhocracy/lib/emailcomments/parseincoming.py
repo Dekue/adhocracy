@@ -118,8 +118,8 @@ def parse_local_part(recipient):
         return None
 
     sec_token = result.group("sectoken")
-
-    secrets = config.get("adhocracy.session.secret")
+c
+    secrets = config.get("adhocracy.crypto.secret")
 
     comp_str = result.group("userid") + result.group("commentid")
     comp_str = hashlib.sha1(comp_str + secrets).hexdigest()
